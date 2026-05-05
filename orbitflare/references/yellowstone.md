@@ -104,7 +104,7 @@ npm install @triton-one/yellowstone-grpc
 import Client, { CommitmentLevel, SubscribeRequest } from "@triton-one/yellowstone-grpc";
 import bs58 from "bs58";
 
-const GRPC_URL = "https://fra.rpc.orbitflare.com:10000";
+const GRPC_URL = "http://fra.rpc.orbitflare.com:10000";
 const X_TOKEN  = process.env.ORBITFLARE_LICENSE_KEY!;
 
 const client = new Client(GRPC_URL, X_TOKEN, {

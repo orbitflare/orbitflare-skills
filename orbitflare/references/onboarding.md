@@ -50,7 +50,7 @@ For production, **enable IP whitelisting on both** so a leaked key alone is usel
 ## 4. Make your first call
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"getBlockHeight"}'
 ```
@@ -58,7 +58,7 @@ curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
 Or in JavaScript:
 
 ```js
-const res = await fetch(`https://mainnet.rpc.orbitflare.com?api_key=${process.env.ORBITFLARE_LICENSE_KEY}`, {
+const res = await fetch(`http://fra.rpc.orbitflare.com?api_key=${process.env.ORBITFLARE_LICENSE_KEY}`, {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBlockHeight" }),
@@ -74,7 +74,7 @@ use orbitflare_sdk::{RpcClientBuilder, Result};
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = RpcClientBuilder::new()
-        .url("https://mainnet.rpc.orbitflare.com")
+        .url("http://fra.rpc.orbitflare.com")
         .build()?;
     println!("slot: {}", client.get_slot().await?);
     Ok(())
@@ -86,7 +86,7 @@ Or with the CLI:
 ```bash
 cargo install orbitflare
 orbitflare auth login --x-orbit-key YOUR_API_KEY
-orbitflare config set rpc.url https://mainnet.rpc.orbitflare.com
+orbitflare config set rpc.url http://fra.rpc.orbitflare.com
 orbitflare ping
 orbitflare rpc slot
 ```
@@ -97,8 +97,8 @@ Both the SDK and the CLI read these as defaults:
 
 ```bash
 export ORBITFLARE_LICENSE_KEY=ORBIT-XXXXXX-NNNNNN-NNNNNN
-export ORBITFLARE_RPC_URL=https://mainnet.rpc.orbitflare.com
-export ORBITFLARE_WS_URL=wss://mainnet.rpc.orbitflare.com
+export ORBITFLARE_RPC_URL=http://fra.rpc.orbitflare.com
+export ORBITFLARE_WS_URL=ws://fra.rpc.orbitflare.com
 export ORBITFLARE_GRPC_URL=http://fra.rpc.orbitflare.com:10000
 export ORBITFLARE_JETSTREAM_URL=http://fra.jetstream.orbitflare.com
 ```

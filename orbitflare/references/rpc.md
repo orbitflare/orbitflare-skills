@@ -15,16 +15,10 @@ For real-time push, use `websockets.md`, `jetstream.md`, or `yellowstone.md`.
 
 ## Endpoints
 
-Auto-routed (default — picks the nearest region per request):
+Solana RPC is always region-pinned. Pick the region closest to the client:
 
 ```
-https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
-```
-
-Pin to a specific region:
-
-```
-https://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
+http://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 ```
 
 | Continent | Region code | City                       |
@@ -50,7 +44,7 @@ https://devnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 Health check (GET, not POST):
 
 ```
-GET https://{region}.rpc.orbitflare.com/health?api_key=YOUR_LICENSE_KEY
+GET http://{region}.rpc.orbitflare.com/health?api_key=YOUR_LICENSE_KEY
 # returns: ok | behind { slots: N } | error
 ```
 
@@ -78,7 +72,7 @@ Exceeding a limit returns HTTP `429 Too Many Requests`. Use exponential backoff 
 ## Request format
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -109,7 +103,7 @@ Pass `{"commitment": "..."}` as the last param on most read methods:
 JSON-RPC 2.0 supports batching — send an *array* of request objects to make N calls in one HTTP round trip. Use this when you have 5+ unrelated calls in flight; otherwise use `getMultipleAccounts` etc.
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '[
     { "jsonrpc": "2.0", "id": 1, "method": "getSlot", "params": [] },
@@ -125,7 +119,7 @@ Use `fetch` against the JSON-RPC endpoint, or the standard `@solana/web3.js` `Co
 ```ts
 import { Connection, PublicKey } from "@solana/web3.js";
 
-const RPC = process.env.ORBITFLARE_RPC_URL!;            // e.g. https://mainnet.rpc.orbitflare.com?api_key=...
+const RPC = process.env.ORBITFLARE_RPC_URL!;            // e.g. http://fra.rpc.orbitflare.com?api_key=...
 const connection = new Connection(RPC, "confirmed");
 
 const balance = await connection.getBalance(
@@ -147,8 +141,8 @@ use orbitflare_sdk::{RpcClientBuilder, Result};
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = RpcClientBuilder::new()
-        .url("https://mainnet.rpc.orbitflare.com")
-        .fallback_url("https://fra.rpc.orbitflare.com")
+        .url("http://fra.rpc.orbitflare.com")
+        .fallback_url("http://ams.rpc.orbitflare.com")
         .commitment("confirmed")
         .build()?;
 
@@ -219,7 +213,7 @@ For DEX swaps, use the **Metis Swap API** which handles fee selection, dynamic c
 
 ## Best practices
 
-- Always use auto-routed `mainnet.rpc.orbitflare.com` unless the client's location is known.
+- Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East, `tok` for APAC).
 - Configure fallback regions in the SDK (`.fallback_url(...)`) for HA.
 - Set `maxSupportedTransactionVersion: 0` on every `getBlock` / `getTransaction` to handle versioned txs.
 - Use `getMultipleAccounts` (max 100 per call) instead of looping `getAccountInfo`.

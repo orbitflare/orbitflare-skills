@@ -73,7 +73,7 @@ Use `signatures` for counting / listing. Use `accounts` to filter client-side by
 ### Recent signatures (default)
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -86,7 +86,7 @@ curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
 ### 100 full transactions for a wallet, including SPL transfers
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -106,7 +106,7 @@ curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
 ### Oldest-first within a time window
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -125,7 +125,7 @@ curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
 ### Failed transactions only (debugging)
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -231,7 +231,7 @@ use orbitflare_sdk::{
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = RpcClientBuilder::new()
-        .url("https://mainnet.rpc.orbitflare.com")
+        .url("http://fra.rpc.orbitflare.com")
         .build()?;
 
     let opts = GetTransactionsOptions::new()
@@ -312,7 +312,7 @@ Solana stores **current** account state, not snapshots. You can replay every tra
 Block 100,000,000 with full transactions:
 
 ```bash
-curl -X POST "https://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
+curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",

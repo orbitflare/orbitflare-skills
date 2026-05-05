@@ -15,8 +15,8 @@ WebSocket subscriptions are perfect for low-volume, single-connection tooling. T
 ## Endpoints
 
 ```
-wss://mainnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
-wss://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
+ws://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
+ws://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 wss://devnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 ```
 
@@ -50,7 +50,7 @@ Each has a corresponding `*Unsubscribe` method that takes the subscription ID re
 const WebSocket = require("ws");
 
 const ws = new WebSocket(
-  "wss://mainnet.rpc.orbitflare.com?api_key=" + process.env.ORBITFLARE_LICENSE_KEY
+  "ws://fra.rpc.orbitflare.com?api_key=" + process.env.ORBITFLARE_LICENSE_KEY
 );
 
 ws.on("open", () => console.log("connected"));
@@ -207,7 +207,7 @@ function connect(url, subscribeAll) {
 }
 
 const stop = connect(
-  "wss://mainnet.rpc.orbitflare.com?api_key=" + process.env.ORBITFLARE_LICENSE_KEY,
+  "ws://fra.rpc.orbitflare.com?api_key=" + process.env.ORBITFLARE_LICENSE_KEY,
   (ws) => {
     ws.send(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "slotSubscribe", params: [] }));
   }
@@ -224,8 +224,8 @@ use orbitflare_sdk::{WsClientBuilder, Result};
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = WsClientBuilder::new()
-        .url("wss://mainnet.rpc.orbitflare.com")
-        .fallback_url("wss://fra.rpc.orbitflare.com")
+        .url("ws://fra.rpc.orbitflare.com")
+        .fallback_url("ws://ams.rpc.orbitflare.com")
         .build()
         .await?;
 

@@ -36,7 +36,7 @@ The CLI is the closest thing OrbitFlare has to an "agent surface" — a single b
 ```bash
 cargo install orbitflare           # requires Rust 1.85+
 orbitflare auth login --x-orbit-key YOUR_API_KEY
-orbitflare config set rpc.url https://mainnet.rpc.orbitflare.com
+orbitflare config set rpc.url http://fra.rpc.orbitflare.com
 orbitflare ping
 ```
 
@@ -73,6 +73,7 @@ Identify what the user is building, then read the relevant reference file **befo
 | Token swaps via Jupiter Metis, or Jito bundle simulation                  | `references/trading-apis.md`      |
 | Manage licenses, API keys, IP whitelists, top-ups, invoices via REST      | `references/customer-api.md`      |
 | Use the `orbitflare` CLI or the `orbitflare-sdk` Rust crate               | `references/cli-sdk.md`           |
+| Find a starter template, example client, or first-party repo              | `references/repos.md`             |
 | Sign up, choose a plan, fund a balance, top up with USDC                  | `references/onboarding.md`        |
 
 ### Streaming chooser
@@ -119,16 +120,15 @@ If the user wants a real-time stream, pick the right product first. Getting this
 
 ### Endpoint cheat sheet
 
-| Service                  | URL pattern                                                          |
-| ------------------------ | -------------------------------------------------------------------- |
-| HTTP RPC (auto-routed)   | `https://mainnet.rpc.orbitflare.com?api_key=KEY`                     |
-| HTTP RPC (pinned region) | `https://{region}.rpc.orbitflare.com?api_key=KEY`                    |
-| WebSocket                | `wss://{region}.rpc.orbitflare.com?api_key=KEY`                      |
-| Devnet RPC               | `https://devnet.rpc.orbitflare.com?api_key=KEY`                      |
-| Yellowstone gRPC         | `http://{region}.rpc.orbitflare.com:10000` (token via client config) |
-| Jetstream                | `http://{region}.jetstream.orbitflare.com`                           |
-| BNB Chain                | `https://bnb-{region}.rpc.orbitflare.com?api_key=KEY`                |
-| Customer API v2          | `https://api.orbitflare.com/customer/v2/...`                         |
+| Service          | URL pattern                                                          |
+| ---------------- | -------------------------------------------------------------------- |
+| HTTP RPC         | `http://{region}.rpc.orbitflare.com?api_key=KEY`                     |
+| WebSocket        | `ws://{region}.rpc.orbitflare.com?api_key=KEY`                       |
+| Devnet RPC       | `https://devnet.rpc.orbitflare.com?api_key=KEY`                      |
+| Yellowstone gRPC | `http://{region}.rpc.orbitflare.com:10000` (token via client config) |
+| Jetstream        | `http://{region}.jetstream.orbitflare.com`                           |
+| BNB Chain        | `https://bnb-{region}.rpc.orbitflare.com?api_key=KEY`                |
+| Customer API v2  | `https://api.orbitflare.com/customer/v2/...`                         |
 
 Region codes (11 total): `ash`, `ny`, `la`, `slc` (US); `ams`, `fra`, `lon`, `dub`, `siau` (EU); `tok`, `sgp` (APAC). See `references/rpc.md` for the full table.
 
@@ -138,8 +138,8 @@ Follow these in every implementation:
 
 ### Endpoints & auth
 
-- Default to `mainnet.rpc.orbitflare.com` so OrbitFlare auto-routes to the nearest region. Only pin to a regional subdomain (e.g. `fra.rpc.orbitflare.com`) when you know the client's location and want to remove the routing hop.
-- For Devnet, always use `devnet.rpc.orbitflare.com` — never point Devnet traffic at mainnet endpoints.
+- Solana endpoints are region-pinned (`{region}.rpc.orbitflare.com`, `{region}.jetstream.orbitflare.com`). Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East, `tok` for APAC).
+- For Devnet, use `devnet.rpc.orbitflare.com` - never point Devnet traffic at a mainnet region.
 - RPC, WebSockets, gRPC, Jetstream, Shredstream, and BNB nodes all use the **license key** as `?api_key=` (or as the `x-token` argument for the Yellowstone gRPC client). The Customer API uses the **API key** as the `X-ORBIT-KEY` header. They are different keys.
 - Never embed either key in client-side or browser-side code. Use environment variables (`ORBITFLARE_LICENSE_KEY`, `ORBITFLARE_RPC_URL`, etc.) and a server-side proxy if the client is a browser.
 - For production, enable IP whitelisting on your license from the dashboard so a leaked URL is not enough to use the key.

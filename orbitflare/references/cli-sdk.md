@@ -30,7 +30,7 @@ cargo install --path .
 
 ```bash
 orbitflare auth login --x-orbit-key YOUR_API_KEY
-orbitflare config set rpc.url https://mainnet.rpc.orbitflare.com
+orbitflare config set rpc.url http://fra.rpc.orbitflare.com
 orbitflare ping
 orbitflare rpc slot
 ```
@@ -230,6 +230,19 @@ The SDK reads these as defaults if you don't pass them explicitly:
 | `ORBITFLARE_GRPC_URL`      | Yellowstone gRPC     |
 | `ORBITFLARE_JETSTREAM_URL` | Jetstream            |
 
+### URL forms
+
+Different services use different schemes. Don't mix them:
+
+| Service          | URL form                                      | Auth                                             |
+| ---------------- | --------------------------------------------- | ------------------------------------------------ |
+| RPC              | `http://{region}.rpc.orbitflare.com`          | SDK appends `?api_key=` from `.api_key()` / env  |
+| WebSocket        | `ws://{region}.rpc.orbitflare.com`            | SDK appends `?api_key=` from `.api_key()` / env  |
+| Yellowstone gRPC | `http://{region}.rpc.orbitflare.com:10000`    | None at the SDK layer (server-side IP allowlist) |
+| Jetstream        | `http://{region}.jetstream.orbitflare.com`    | None at the SDK layer (server-side IP allowlist) |
+
+OrbitFlare regional endpoints are plain `http://` and `ws://` (not TLS); gRPC negotiates HTTP/2 over TCP. The gRPC and Jetstream builders never touch `ORBITFLARE_LICENSE_KEY` or `?api_key=`. If you put an api_key on a gRPC URL the SDK will not strip it, but the server will not use it either.
+
 ### RPC client
 
 ```rust
@@ -238,8 +251,8 @@ use orbitflare_sdk::{RpcClientBuilder, Result};
 #[tokio::main]
 async fn main() -> Result<()> {
     let client = RpcClientBuilder::new()
-        .url("https://mainnet.rpc.orbitflare.com")
-        .fallback_url("https://fra.rpc.orbitflare.com")
+        .url("http://fra.rpc.orbitflare.com")
+        .fallback_url("http://ams.rpc.orbitflare.com")
         .commitment("confirmed")
         .build()?;
 
@@ -255,13 +268,54 @@ Typed helpers: `get_slot`, `get_balance`, `get_account_info`, `get_multiple_acco
 
 Escape hatches: `client.request("methodName", json!([...]))` and `client.request_raw("...")` for any RPC method by name.
 
+#### `get_transactions_for_address` (OrbitFlare-specific)
+
+Wallet history in one call. Returns `GetTransactionsResult { data: Vec<Value>, pagination_token: Option<String> }`. Build the request with the `GetTransactionsOptions` builder; for SPL transfers, set `token_accounts: "balanceChanged"` on the filters or you'll miss every token movement.
+
+```rust
+use orbitflare_sdk::{
+    GetTransactionsFilters, GetTransactionsOptions, RangeFilter, Result, RpcClientBuilder,
+};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = RpcClientBuilder::new()
+        .url("http://fra.rpc.orbitflare.com")
+        .build()?;
+
+    let opts = GetTransactionsOptions::new()
+        .limit(100)
+        .sort_order("desc")
+        .commitment("confirmed")
+        .filters(
+            GetTransactionsFilters::new()
+                .token_accounts("balanceChanged")
+                .slot(RangeFilter { gte: Some(250_000_000), ..Default::default() })
+                .status("success"),
+        );
+
+    let mut page = client.get_transactions_for_address("YOUR_WALLET", opts.clone()).await?;
+    loop {
+        for tx in &page.data {
+            // tx is the same shape as getTransaction's result
+        }
+        let Some(token) = page.pagination_token else { break };
+        let next_opts = opts.clone().pagination_token(&token);
+        page = client.get_transactions_for_address("YOUR_WALLET", next_opts).await?;
+    }
+    Ok(())
+}
+```
+
+`commitment` accepts only `confirmed` or `finalized` - `processed` returns `-32602 Invalid params`. `RangeFilter` supports `gte`, `gt`, `lte`, `lt`, `eq`, and works for `block_time` (`i64`), `slot` (`u64`), and `signature` (`String`).
+
 ### WebSocket client
 
 ```rust
 use orbitflare_sdk::{WsClientBuilder, Result};
 
 let client = WsClientBuilder::new()
-    .url("wss://mainnet.rpc.orbitflare.com")
+    .url("ws://fra.rpc.orbitflare.com")
     .build().await?;
 
 let mut slots = client.slot_subscribe().await?;
@@ -273,7 +327,7 @@ while let Some(slot) = slots.next().await {
 }
 ```
 
-All subscriptions on a single client share one underlying WebSocket. The SDK pings every 10s by default and re-subscribes automatically after reconnect.
+All subscriptions on a single client share one underlying WebSocket. The SDK pings every 10s by default and re-subscribes automatically after reconnect. Call `sub.unsubscribe().await` to tear down a single subscription cleanly without closing the socket.
 
 ### Yellowstone gRPC client
 
@@ -297,7 +351,7 @@ while let Some(update) = stream.next().await {
 }
 ```
 
-Programmatic filters (no YAML) live under `orbitflare_sdk::proto::geyser::*`. See `yellowstone.md`.
+Programmatic filters (no YAML) live under `orbitflare_sdk::proto::geyser::*`. See `yellowstone.md`. Call `stream.close()` to shut down a stream task cleanly; the same applies to `JetstreamStream`.
 
 ### Jetstream client
 
@@ -335,6 +389,8 @@ Same builder shape as the Geyser client. See `jetstream.md`.
 | `.ping_interval_secs(n)`    | App-level ping cadence                                                 |
 | `.max_missed_pongs(n)`      | Reconnect after N missed pongs                                         |
 | `.channel_capacity(n)`      | Bounded channel between background task and your code                  |
+
+`RetryPolicy::default()` is `initial_delay=100ms, max_delay=30s, multiplier=2.0, max_attempts=0`. `max_attempts: 0` means **infinite retries** (the default for streaming clients). Set a positive `max_attempts` if you want bounded retries for an RPC call.
 
 ### Multiple streams
 
