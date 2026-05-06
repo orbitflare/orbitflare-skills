@@ -1,0 +1,47 @@
+{
+  "name": "@orbitflare/skills",
+  "version": "0.1.0",
+  "description": "OrbitFlare agent skills installer. Drops the OrbitFlare skill into Claude Code, Cursor, or Codex skill folders so coding agents write OrbitFlare code correctly.",
+  "type": "module",
+  "bin": {
+    "orbitflare-skills": "bin/install.js"
+  },
+  "keywords": [
+    "orbitflare",
+    "solana",
+    "skills",
+    "claude",
+    "claude-code",
+    "cursor",
+    "codex",
+    "ai",
+    "agent",
+    "rpc",
+    "jetstream",
+    "yellowstone",
+    "shredstream"
+  ],
+  "author": "OrbitFlare",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orbitflare/orbitflare-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/orbitflare/orbitflare-skills/issues"
+  },
+  "homepage": "https://docs.orbitflare.com/agents/skills",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "orbitflare/SKILL.md",
+    "orbitflare/LICENSE",
+    "orbitflare/references",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
