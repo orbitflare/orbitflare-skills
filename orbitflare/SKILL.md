@@ -1,6 +1,6 @@
 ---
 name: orbitflare
-description: Build Solana applications on OrbitFlare's Shredstream-optimized infrastructure. Covers HTTP RPC and WebSockets, real-time streaming via Jetstream and Yellowstone gRPC, raw Shredstream, Dedicated Nodes (Solana + BNB Chain), getTransactionsForAddress, historical archive data, trading APIs (Metis Swap, Jito Bundle Simulation), Customer API v2, the OrbitFlare CLI, and the orbitflare-sdk-rs Rust SDK.
+description: Build Solana applications on OrbitFlare's Shredstream-optimized infrastructure. Covers HTTP RPC and WebSockets, real-time streaming via Jetstream (v1 and v2) and Yellowstone gRPC, raw Shredstream, Dedicated Nodes (Solana + BNB Chain), getTransactionsForAddress, historical archive data, trading APIs (Metis Swap, Jito Bundle Simulation), Customer API v2, the OrbitFlare CLI, and the first-party SDKs (orbitflare-sdk for Rust, @orbitflare/sdk for TypeScript).
 metadata:
   author: OrbitFlare
   version: "0.1.0"
@@ -10,7 +10,7 @@ metadata:
 
 # OrbitFlare — Build on Solana
 
-You are an expert Solana developer building on OrbitFlare. OrbitFlare is a Shredstream-optimized Solana infrastructure provider with HTTP RPC, WebSockets, two flavors of gRPC streaming (Jetstream and Yellowstone), raw UDP Shredstream, Dedicated Nodes for Solana and BNB Chain, an enriched `getTransactionsForAddress` method, full archive data from genesis, and trading APIs (Metis Swap, Jito Bundle Simulation). This skill teaches you how to use it correctly — whether you write raw HTTP, the official Rust SDK (`orbitflare-sdk`), the [OrbitFlare CLI](https://docs.orbitflare.com/cli), or the Customer API.
+You are an expert Solana developer building on OrbitFlare. OrbitFlare is a Shredstream-optimized Solana infrastructure provider with HTTP RPC, WebSockets, two flavors of gRPC streaming (Jetstream and Yellowstone), raw UDP Shredstream, Dedicated Nodes for Solana and BNB Chain, an enriched `getTransactionsForAddress` method, full archive data from genesis, and trading APIs (Metis Swap, Jito Bundle Simulation). This skill teaches you how to use it correctly — whether you write raw HTTP, a first-party SDK (`orbitflare-sdk` for Rust or `@orbitflare/sdk` for TypeScript), the [OrbitFlare CLI](https://docs.orbitflare.com/cli), or the Customer API.
 
 The source of truth for everything in this skill is [docs.orbitflare.com](https://docs.orbitflare.com) and the docs index at [docs.orbitflare.com/llms.txt](https://docs.orbitflare.com/llms.txt). When in doubt, fetch one of those before implementing.
 
@@ -42,18 +42,26 @@ orbitflare ping
 
 See `references/cli-sdk.md` for the full command surface.
 
-### 3. (Optional) Install the Rust SDK
+### 3. (Optional) Install an SDK
 
-For programmatic use, prefer the official Rust SDK over hand-rolled HTTP/gRPC:
+For programmatic use, prefer a first-party SDK over hand-rolled HTTP/gRPC.
+
+**Rust** (`orbitflare-sdk`, features are opt-in):
 
 ```bash
 cargo add orbitflare-sdk                          # RPC only
 cargo add orbitflare-sdk --features ws            # + WebSocket
 cargo add orbitflare-sdk --features grpc          # + Yellowstone gRPC
-cargo add orbitflare-sdk --features jetstream     # + Jetstream
+cargo add orbitflare-sdk --features jetstream     # + Jetstream (v1 and v2)
 ```
 
-The SDK reads `ORBITFLARE_LICENSE_KEY`, `ORBITFLARE_RPC_URL`, `ORBITFLARE_WS_URL`, `ORBITFLARE_GRPC_URL`, `ORBITFLARE_JETSTREAM_URL` from the environment if you don't pass them explicitly. Source: [github.com/orbitflare/orbitflare-sdk-rs](https://github.com/orbitflare/orbitflare-sdk-rs).
+**TypeScript** (`@orbitflare/sdk`; `@grpc/grpc-js` is a peer dependency for gRPC/Jetstream):
+
+```bash
+npm install @orbitflare/sdk @grpc/grpc-js
+```
+
+The Rust SDK reads `ORBITFLARE_LICENSE_KEY`, `ORBITFLARE_RPC_URL`, `ORBITFLARE_WS_URL`, `ORBITFLARE_GRPC_URL`, `ORBITFLARE_JETSTREAM_URL` from the environment if you don't pass them explicitly. Sources: [orbitflare-sdk-rs](https://github.com/orbitflare/orbitflare-sdk-rs) · [orbitflare-sdk-ts](https://github.com/orbitflare/orbitflare-sdk-ts).
 
 ## Routing
 
@@ -104,14 +112,14 @@ If the user wants a real-time stream, pick the right product first. Getting this
                                             │
                                             ▼
                           ┌─────────────────────────────┐
-                          │ Need lowest-latency tx +    │
-                          │ account stream?             │
+                          │ Need lowest-latency         │
+                          │ transaction stream?         │
                           └──────────────┬──────────────┘
                                   yes    │    no
                        ┌─────────────────┘
                        ▼
                  Jetstream gRPC
-                 (decoded shreds, tx + account filters only)
+                 (decoded shreds, transaction filters only)
                                             │
                                             ▼
                  WebSockets
@@ -130,7 +138,7 @@ If the user wants a real-time stream, pick the right product first. Getting this
 | BNB Chain        | `https://bnb-{region}.rpc.orbitflare.com?api_key=KEY`                |
 | Customer API v2  | `https://api.orbitflare.com/customer/v2/...`                         |
 
-Region codes (11 total): `ash`, `ny`, `la`, `slc` (US); `ams`, `fra`, `lon`, `dub`, `siau` (EU); `tok`, `sgp` (APAC). See `references/rpc.md` for the full table.
+Region codes (11 total): `ash`, `ny`, `la`, `slc` (US); `ams`, `fra`, `lon`, `dub`, `siau` (EU); `tok`, `sgp` (APAC). See `references/rpc.md` for the full table. **Jetstream runs on a subset with different codes**: `ny`, `slc`, `fra`, `ams`, `lon`, `dub`, `siau`, `jp` (Tokyo), `sgp` (no Ashburn or LA). See `references/jetstream.md`.
 
 ## Rules
 
@@ -138,7 +146,7 @@ Follow these in every implementation:
 
 ### Endpoints & auth
 
-- Solana endpoints are region-pinned (`{region}.rpc.orbitflare.com`, `{region}.jetstream.orbitflare.com`). Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East, `tok` for APAC).
+- Solana endpoints are region-pinned (`{region}.rpc.orbitflare.com`, `{region}.jetstream.orbitflare.com`). Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East; for APAC, `tok` on RPC and `jp` on Jetstream).
 - For Devnet, use `devnet.rpc.orbitflare.com` - never point Devnet traffic at a mainnet region.
 - RPC, WebSockets, gRPC, Jetstream, Shredstream, and BNB nodes all use the **license key** as `?api_key=` (or as the `x-token` argument for the Yellowstone gRPC client). The Customer API uses the **API key** as the `X-ORBIT-KEY` header. They are different keys.
 - Never embed either key in client-side or browser-side code. Use environment variables (`ORBITFLARE_LICENSE_KEY`, `ORBITFLARE_RPC_URL`, etc.) and a server-side proxy if the client is a browser.
@@ -157,7 +165,7 @@ Follow these in every implementation:
 - Cap is **50 concurrent connections per IP** across all gRPC and WebSocket endpoints (Jetstream and Yellowstone share this pool). Close streams cleanly before opening new ones. Hitting the cap returns gRPC `RESOURCE_EXHAUSTED` or WebSocket close code `1008`.
 - **Send a ping every 30 seconds on gRPC.** Cloud load balancers terminate idle gRPC streams at ~10 minutes. WebSocket idle timeout is 60 seconds — also ping or keep subscriptions noisy.
 - Implement reconnection with exponential backoff: start at 1s, double up to 30s, infinite attempts. Re-subscribe after every reconnect. The Rust SDK does this for you (`RetryPolicy`); if you write your own client, copy the pattern.
-- Do not pick Jetstream when you need inner instructions, transaction metadata, slots, blocks, or entries — those are Yellowstone-only. Jetstream is for raw, low-latency transaction and account streams.
+- Do not pick Jetstream when you need inner instructions, transaction metadata, slots, blocks, or entries — those are Yellowstone-only. Jetstream is for raw, low-latency **transaction** streams; account filters and account updates appear in the v1 proto but are not currently implemented.
 
 ### Transactions
 
@@ -183,7 +191,7 @@ Follow these in every implementation:
 - Keep keys in env vars (`ORBITFLARE_LICENSE_KEY`, `ORBITFLARE_RPC_URL`, `ORBITFLARE_WS_URL`, `ORBITFLARE_GRPC_URL`, `ORBITFLARE_JETSTREAM_URL`) so the SDK and CLI both pick them up automatically.
 - Handle `429 Too Many Requests` with exponential backoff. There are no monthly caps, only per-second RPS/TPS — so a brief retry usually clears the limit.
 - For multi-region or HA setups, configure fallback URLs with the SDK's `.fallback_url(...)` (or pass them to the CLI's `--fallback-url`) so failover happens transparently.
-- Prefer the **OrbitFlare Rust SDK** for any non-trivial Rust app. For TypeScript, use `fetch` against the JSON-RPC endpoint, the standard `ws` client for WebSockets, and `@triton-one/yellowstone-grpc` for Yellowstone.
+- Prefer a **first-party OrbitFlare SDK** for any non-trivial app: `orbitflare-sdk` (Rust, crates.io) or `@orbitflare/sdk` (TypeScript, npm). Both cover RPC, WebSocket, Yellowstone gRPC, and Jetstream (v1 and v2) with built-in retry, failover, and reconnection. For Yellowstone specifically you can also use `@triton-one/yellowstone-grpc` in TypeScript, but the OrbitFlare SDK is the first-party path.
 
 ## Common pitfalls
 
