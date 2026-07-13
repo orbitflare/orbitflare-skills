@@ -1,11 +1,12 @@
-# OrbitFlare CLI & Rust SDK
+# OrbitFlare CLI & SDKs
 
-Two first-party tools for building on OrbitFlare:
+First-party tools for building on OrbitFlare:
 
 - **OrbitFlare CLI** (`orbitflare`) — single binary that wraps RPC queries, gRPC/Jetstream streaming with YAML configs, project scaffolding, account management, payments, and an interactive TUI dashboard. JSON output on every command (`--json`) makes it scriptable.
-- **orbitflare-sdk-rs** — official Rust SDK with typed clients for RPC, WebSocket, Yellowstone gRPC, and Jetstream. Built-in retry, failover, and reconnection.
+- **orbitflare-sdk** (Rust) — official SDK with typed clients for RPC, WebSocket, Yellowstone gRPC, and Jetstream (v1 and v2). Built-in retry, failover, and reconnection.
+- **@orbitflare/sdk** (TypeScript) — the same client surface for Node/TypeScript (RPC, WebSocket, Yellowstone gRPC, Jetstream v1 and v2). This reference covers the CLI and the Rust SDK in depth; the TypeScript SDK mirrors the same builders and methods (camelCased). See [docs.orbitflare.com/sdk/typescript-jetstream](https://docs.orbitflare.com/sdk/typescript-jetstream).
 
-Source: [docs.orbitflare.com/cli](https://docs.orbitflare.com/cli) · [docs.orbitflare.com/sdk/overview](https://docs.orbitflare.com/sdk/overview) · [github.com/orbitflare/orbitflare-sdk-rs](https://github.com/orbitflare/orbitflare-sdk-rs)
+Source: [docs.orbitflare.com/cli](https://docs.orbitflare.com/cli) · [docs.orbitflare.com/sdk/overview](https://docs.orbitflare.com/sdk/overview) · [orbitflare-sdk-rs](https://github.com/orbitflare/orbitflare-sdk-rs) · [orbitflare-sdk-ts](https://github.com/orbitflare/orbitflare-sdk-ts)
 
 ---
 
@@ -213,10 +214,12 @@ Official Rust SDK with typed clients for every OrbitFlare service. Built-in retr
 cargo add orbitflare-sdk                          # RPC only (default)
 cargo add orbitflare-sdk --features ws            # + WebSocket
 cargo add orbitflare-sdk --features grpc          # + Yellowstone gRPC
-cargo add orbitflare-sdk --features jetstream     # + Jetstream
+cargo add orbitflare-sdk --features jetstream     # + Jetstream (v1 and v2)
 ```
 
 You can stack features. `cargo add orbitflare-sdk --features "ws grpc jetstream"` gets you everything.
+
+TypeScript equivalent: `npm install @orbitflare/sdk @grpc/grpc-js` (the `@grpc/grpc-js` peer dep is only needed for gRPC/Jetstream). Import subpaths mirror the features, e.g. `@orbitflare/sdk/jetstream` (v1) and `@orbitflare/sdk/jetstream/v2`.
 
 ### Environment variables
 
@@ -407,8 +410,8 @@ let mut s3 = client.subscribe_yaml("config/slots.yml")?;
 | Use this                | When                                                                       |
 | ----------------------- | -------------------------------------------------------------------------- |
 | **CLI**                 | Shell scripting, ops, ad-hoc queries, quick streaming with `--json` output |
-| **Rust SDK**            | Long-lived services, trading bots, indexers, anything in Rust              |
-| **Raw HTTP / web3.js**  | TypeScript / Python / Go / Ruby / etc. — no first-party SDK exists yet     |
-| **`@triton-one/yellowstone-grpc`** | TypeScript Yellowstone client                                  |
+| **Rust SDK** (`orbitflare-sdk`)     | Long-lived services, trading bots, indexers, anything in Rust  |
+| **TypeScript SDK** (`@orbitflare/sdk`) | Node/TypeScript services, bots, and Jetstream (v1 and v2) clients |
+| **Raw HTTP / web3.js**  | Python / Go / Ruby / etc. where no first-party SDK exists yet               |
 
-For TypeScript apps, use `fetch` for HTTP RPC, the standard `ws` client for WebSockets, and `@triton-one/yellowstone-grpc` for Yellowstone. There is no first-party Jetstream TypeScript client yet — use the [example repo](https://github.com/orbitflare/jetstream-client-example) as a starting point or call into the Rust client.
+For TypeScript apps, prefer the first-party `@orbitflare/sdk` — it has typed clients for RPC, WebSocket, Yellowstone gRPC, and Jetstream v1 and v2 (`@orbitflare/sdk/jetstream` and `@orbitflare/sdk/jetstream/v2`). The [example repo](https://github.com/orbitflare/jetstream-client-example) has runnable TypeScript v1 and v2 clients. `@triton-one/yellowstone-grpc` remains a fine alternative for Yellowstone specifically.

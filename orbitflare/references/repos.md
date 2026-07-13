@@ -6,10 +6,18 @@ First-party repos under [github.com/orbitflare](https://github.com/orbitflare). 
 
 ### orbitflare-sdk-rs
 
-Official Rust SDK. RPC, WebSocket, Yellowstone gRPC, and Jetstream clients with retry, multi-endpoint failover, ping/pong liveness, and (for WS) auto re-subscribe.
+Official Rust SDK. RPC, WebSocket, Yellowstone gRPC, and Jetstream (v1 and v2) clients with retry, multi-endpoint failover, ping/pong liveness, and (for WS) auto re-subscribe.
 
 - Repo: [github.com/orbitflare/orbitflare-sdk-rs](https://github.com/orbitflare/orbitflare-sdk-rs)
 - Crate: [crates.io/crates/orbitflare-sdk](https://crates.io/crates/orbitflare-sdk)
+- Reference: `cli-sdk.md`
+
+### orbitflare-sdk-ts
+
+Official TypeScript SDK (`@orbitflare/sdk`). Same surface as the Rust SDK: RPC, WebSocket, Yellowstone gRPC, and Jetstream (v1 and v2), with retry, failover, and reconnection. `@grpc/grpc-js` is a peer dependency for gRPC/Jetstream.
+
+- Repo: [github.com/orbitflare/orbitflare-sdk-ts](https://github.com/orbitflare/orbitflare-sdk-ts)
+- Package: [npmjs.com/package/@orbitflare/sdk](https://www.npmjs.com/package/@orbitflare/sdk)
 - Reference: `cli-sdk.md`
 
 ### orbit-cli
@@ -67,10 +75,11 @@ Production Jetstream consumer. PumpFun decoding, whale alerts, YAML-based filter
 
 ### jetstream-client-example
 
-Minimal standalone Jetstream gRPC client. Smaller than `solana-wallet-tracker`; good if you just want to see "what's the bare minimum to subscribe."
+Minimal Jetstream clients built on the first-party SDKs, in **Rust and TypeScript** (plus a raw-proto Go client). Each language ships a v1 and a v2 example that decode pump.fun instructions from one shared decoder, and the v2 example adds a Raydium filter to the live stream to show runtime filter management. Smaller than `solana-wallet-tracker`; good for "what's the bare minimum to subscribe."
 
 - Repo: [github.com/orbitflare/jetstream-client-example](https://github.com/orbitflare/jetstream-client-example)
-- Use when: writing a Jetstream client outside Rust, or you want a hello-world starting point.
+- Run: `cargo run --bin v1` / `--bin v2` (Rust) or `npm run v1` / `npm run v2` (TypeScript).
+- Use when: you want a hello-world Jetstream starting point in Rust or TypeScript, including a v2 (runtime filters + enrichment) example.
 
 ### wallet-ticker
 
@@ -84,6 +93,7 @@ Live terminal dashboard for a Solana wallet's SOL + SPL balances, in under 150 L
 | Goal                                                  | Start here                                |
 | ----------------------------------------------------- | ----------------------------------------- |
 | Use OrbitFlare from a Rust service                    | `orbitflare-sdk-rs`                       |
+| Use OrbitFlare from a TypeScript/Node service         | `orbitflare-sdk-ts`                       |
 | Quick CLI checks, ops scripting, ad-hoc streaming     | `orbit-cli`                               |
 | Wire OrbitFlare into Claude Desktop / Cursor / etc.   | `orbitflare-mcp`                          |
 | Bootstrap a Blinks app, copy trader, or indexer       | `orbitflare/templates`                    |

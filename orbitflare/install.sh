@@ -104,8 +104,8 @@ Next steps:
 
   3. Set environment variables your code can pick up:
        export ORBITFLARE_LICENSE_KEY=ORBIT-XXXXXX-NNNNNN-NNNNNN
-       export ORBITFLARE_RPC_URL=https://mainnet.rpc.orbitflare.com
-       export ORBITFLARE_WS_URL=wss://mainnet.rpc.orbitflare.com
+       export ORBITFLARE_RPC_URL=http://mainnet.rpc.orbitflare.com
+       export ORBITFLARE_WS_URL=ws://mainnet.rpc.orbitflare.com
        export ORBITFLARE_GRPC_URL=http://fra.rpc.orbitflare.com:10000
        export ORBITFLARE_JETSTREAM_URL=http://fra.jetstream.orbitflare.com
 

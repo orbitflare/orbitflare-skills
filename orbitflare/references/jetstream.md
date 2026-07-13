@@ -1,16 +1,18 @@
 # OrbitFlare Jetstream
 
-OrbitFlare's lowest-latency gRPC stream of decoded Solana transactions and account updates. Use this when you want every relevant transaction the moment it lands, with the smallest possible per-event payload.
+OrbitFlare's lowest-latency gRPC stream of decoded Solana transactions. Use this when you want every relevant transaction the moment it lands, with the smallest possible per-event payload. Jetstream is transaction-focused: account filters and account updates exist in the v1 proto but are **not currently implemented**, so don't build against them.
 
-Source: [docs.orbitflare.com/data-streaming/jetstream](https://docs.orbitflare.com/data-streaming/jetstream) · [docs.orbitflare.com/sdk/rust-jetstream](https://docs.orbitflare.com/sdk/rust-jetstream)
+Two protocol versions ship on the **same endpoints and auth**: **v1** (fixed filters, one server stream) and **v2** (runtime-managed filters, per-message sequence numbers, opt-in enrichment, and slot lifecycle events). See the "Jetstream v2" section below.
+
+Source: [docs.orbitflare.com/data-streaming/jetstream](https://docs.orbitflare.com/data-streaming/jetstream) · [v2 overview](https://docs.orbitflare.com/data-streaming/jetstream-v2) · [v2 protocol reference](https://docs.orbitflare.com/data-streaming/jetstream-v2-reference) · SDKs: [Rust](https://docs.orbitflare.com/sdk/rust-jetstream) · [TypeScript](https://docs.orbitflare.com/sdk/typescript-jetstream)
 
 ## When to use
 
 - Real-time trading bots, snipers, and market-making engines.
-- Live wallet trackers (transactions + account updates) where latency matters more than full metadata.
+- Live wallet trackers keyed on the transactions that touch a wallet, where latency matters more than full metadata.
 - Live alerts: PumpFun launches, large transfers, new pool creation, etc.
 
-If you need **inner instructions, transaction metadata, slot/block/entry feeds, or `commitment` control**, you need **Yellowstone** instead — Jetstream intentionally omits those for speed. See `yellowstone.md`.
+If you need **inner instructions, transaction metadata, slot/block/entry feeds, or `commitment` control**, you need **Yellowstone** instead. Jetstream intentionally omits those for speed. See `yellowstone.md`.
 
 If you need data **before** any block exists at all (raw turbine shreds), use **Shredstream** — see `shredstream.md`.
 
@@ -23,7 +25,7 @@ If you need data **before** any block exists at all (raw turbine shreds), use **
 | Transaction metadata       | No                                              | Yes (fee, balances, logs)                         |
 | Slot / block / entry feeds | No                                              | Yes                                               |
 | Commitment control         | No (always tip-of-shred)                        | Yes (`processed` / `confirmed` / `finalized`)     |
-| Filters                    | `transactions`, `accounts`                      | `transactions`, `accounts`, `slots`, `blocks`, `blocksMeta`, `entry` |
+| Filters                    | `transactions` (v2 also streams slot events)    | `transactions`, `accounts`, `slots`, `blocks`, `blocksMeta`, `entry` |
 | Best for                   | Real-time trading                               | Indexing / analytics                              |
 | Connection                 | gRPC (decoded shreds)                           | gRPC (Geyser)                                     |
 
@@ -35,7 +37,7 @@ Both share the same 50 concurrent connections per IP cap.
 http://{region}.jetstream.orbitflare.com
 ```
 
-Region codes are the same as HTTP RPC (`ash`, `ny`, `la`, `slc`, `ams`, `fra`, `lon`, `dub`, `siau`, `tok`, `sgp`). Pick the region closest to the validators you care about (Frankfurt and New York are usually fastest for mainstream programs).
+Region codes: `ny`, `slc` (US); `fra`, `ams`, `lon`, `dub`, `siau` (EU); `jp`, `sgp` (APAC). Pick the region closest to the validators you care about (Frankfurt and New York are usually fastest for mainstream programs).
 
 Authentication is via metadata on the gRPC channel — the orbitflare-sdk handles it from `ORBITFLARE_LICENSE_KEY`.
 
@@ -47,7 +49,7 @@ Authentication is via metadata on the gRPC channel — the orbitflare-sdk handle
 
 ## Filters
 
-Jetstream supports two filter blocks: `transactions` and `accounts`. Each is a map of named filters; a transaction or account matches if any *named* filter matches.
+Jetstream filters on **transactions**. Filters are a map of named filters; a transaction matches if any *named* filter matches. (An `accounts` filter block appears in the v1 proto but is **not currently implemented**, along with account updates, so it never fires.)
 
 ### Transaction filters
 
@@ -57,14 +59,7 @@ Jetstream supports two filter blocks: `transactions` and `accounts`. Each is a m
 | `account_exclude`  | Drop transactions that touch any of these addresses.                                                |
 | `account_required` | Only match if **every** listed address appears in the transaction (logical AND).                    |
 
-### Account filters
-
-| Field              | Effect                                                                                              |
-| ------------------ | --------------------------------------------------------------------------------------------------- |
-| `account`          | Watch these specific account addresses.                                                             |
-| `owner`            | Watch every account owned by these programs.                                                        |
-
-There is **no** `vote`, `failed`, `signature`, `slots`, `blocks`, or `commitment` field on Jetstream — those are Yellowstone-only.
+There is **no** `vote`, `failed`, `signature`, `slots`, `blocks`, or `commitment` field on Jetstream. Those are Yellowstone-only. Vote transactions are already excluded server-side, so you never receive them.
 
 ## Quick start (CLI)
 
@@ -122,20 +117,11 @@ async fn main() -> Result<()> {
 
     while let Some(update) = stream.next().await {
         let update = update?;
-        match update.update_oneof {
-            Some(UpdateOneof::Transaction(tx)) => {
-                if let Some(info) = &tx.transaction {
-                    let sig = bs58::encode(&info.signature).into_string();
-                    println!("slot={} sig={}...", tx.slot, &sig[..16]);
-                }
+        if let Some(UpdateOneof::Transaction(tx)) = update.update_oneof {
+            if let Some(info) = &tx.transaction {
+                let sig = bs58::encode(&info.signature).into_string();
+                println!("slot={} sig={}...", tx.slot, &sig[..16]);
             }
-            Some(UpdateOneof::Account(acct)) => {
-                if let Some(info) = &acct.account {
-                    let pk = bs58::encode(&info.pubkey).into_string();
-                    println!("account {pk} updated at slot {}", acct.slot);
-                }
-            }
-            _ => {}
         }
     }
 
@@ -167,20 +153,136 @@ let request = SubscribeRequest {
 let mut stream = client.subscribe(request);
 ```
 
-## TypeScript (Node.js example client)
+## TypeScript (@orbitflare/sdk)
 
-There isn't a first-party TypeScript client for Jetstream. Use the example repo as a starting point:
+There is a first-party TypeScript client. `@grpc/grpc-js` is a peer dependency for streaming.
 
 ```bash
-git clone https://github.com/orbitflare/jetstream-client-example
-cd jetstream-client-example
-cargo build --release
-./target/release/jetstream-client-example \
-  -j http://fra.jetstream.orbitflare.com \
-  -i 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+npm install @orbitflare/sdk @grpc/grpc-js
 ```
 
-Or for a fuller real-world example, [orbitflare/solana-wallet-tracker](https://github.com/orbitflare/solana-wallet-tracker) has PumpFun decoding, whale alerts, and YAML-based filters.
+```ts
+import {
+  JetstreamClientBuilder,
+  SubscribeRequestBuilder,
+  TransactionFilter,
+} from '@orbitflare/sdk/jetstream';
+import bs58 from 'bs58';
+
+const client = new JetstreamClientBuilder()
+  .url('http://fra.jetstream.orbitflare.com')
+  .fallbackUrl('http://ny.jetstream.orbitflare.com')
+  .build();
+
+// Typed account filters, no hand-written protobuf.
+const request = new SubscribeRequestBuilder()
+  .transactions(
+    'pumpfun',
+    new TransactionFilter().accountInclude(['6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P']),
+  )
+  .build();
+
+const stream = client.subscribe(request);
+
+for await (const update of stream) {
+  const info = update.transaction?.transaction;
+  if (info?.signature) {
+    console.log(`slot=${update.transaction!.slot} sig=${bs58.encode(info.signature).slice(0, 16)}`);
+  }
+}
+```
+
+The SDK also accepts a YAML config via `client.subscribeYaml('jetstream.yml')`, same schema as the CLI.
+
+### Example repos
+
+- [orbitflare/jetstream-client-example](https://github.com/orbitflare/jetstream-client-example): minimal Rust and TypeScript clients built on the SDKs, each with a v1 and a v2 example that decode pump.fun instructions from a shared decoder. Run `cargo run --bin v1` / `--bin v2` (Rust) or `npm run v1` / `npm run v2` (TypeScript).
+- [orbitflare/solana-wallet-tracker](https://github.com/orbitflare/solana-wallet-tracker): fuller real-world example with PumpFun decoding, whale alerts, and YAML-based filters.
+
+## Jetstream v2
+
+v2 runs on the **same endpoints and auth** as v1 and is fully additive: v1 keeps working unchanged. Reach for v2 when you want any of:
+
+- **Runtime-managed filters.** Add and remove filters on a live stream with no reconnect. Each filter carries a client-chosen `filter_id`, echoed back on every matching transaction so you can route by which filter matched.
+- **Per-message sequence numbers.** Every response carries a monotonic `sequence`, so you can detect dropped messages.
+- **Opt-in enrichment.** Set `include_enrichment` on a filter to also receive fee payer, program ids, compute-unit price, compute limit, tx size, and resolved address-table addresses. Off by default (lean payload); enabling it on any active filter enriches every transaction the session receives.
+- **Slot lifecycle events.** A separate server stream of slot alive/complete/dead events.
+
+A v2 filter must set at least one of `account_include` / `account_exclude` / `account_required`; empty (match-everything) filters are rejected. There is no account-watching in v2.
+
+The priority fee is not a field; compute it as `compute_unit_price * compute_limit / 1_000_000` (lamports).
+
+### Rust
+
+```rust
+use orbitflare_sdk::jetstream::v2::{JetstreamClientBuilder, TransactionFilter};
+use orbitflare_sdk::proto::jetstream::v2::subscribe_transactions_response::Payload;
+use orbitflare_sdk::Result;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let client = JetstreamClientBuilder::new()
+        .url("http://fra.jetstream.orbitflare.com")
+        .build()?;
+
+    let filter = TransactionFilter::new()
+        .account_include(["6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"])
+        .include_enrichment(true)
+        .with_id("pumpfun");
+
+    let mut stream = client.subscribe_transactions(vec![filter]);
+    let handle = stream.handle();
+
+    while let Some(resp) = stream.next().await {
+        match resp?.payload {
+            Some(Payload::Transaction(ft)) => {
+                if let Some(tx) = &ft.transaction {
+                    println!("slot={} cu_price={} matched={:?}", tx.slot, tx.compute_unit_price, ft.filter_ids);
+                }
+            }
+            Some(Payload::FilterValidation(r)) => println!("filter {} accepted={}", r.filter_id, r.accepted),
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+// Add/remove filters on the live stream, no reconnect:
+// handle.add_filters(vec![TransactionFilter::new().account_include(["..."]).with_id("raydium")])?;
+// handle.remove_filters(vec!["pumpfun".to_string()])?;
+
+// Slot lifecycle events (separate stream):
+// let mut slots = client.subscribe_slots();
+// while let Some(event) = slots.next().await { let e = event?; println!("slot={} {:?}", e.slot, e.status()); }
+```
+
+### TypeScript
+
+```ts
+import { JetstreamClientBuilder, TransactionFilter } from '@orbitflare/sdk/jetstream/v2';
+
+const client = new JetstreamClientBuilder().url('http://fra.jetstream.orbitflare.com').build();
+
+const stream = client.subscribeTransactions([
+  new TransactionFilter().accountInclude(['6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P']).includeEnrichment(true).withId('pumpfun'),
+]);
+const handle = stream.handle();
+
+for await (const resp of stream) {
+  if (resp.transaction) {
+    const tx = resp.transaction.transaction;
+    if (tx) console.log(`seq=${resp.sequence} slot=${tx.slot} cuPrice=${tx.computeUnitPrice} matched=${JSON.stringify(resp.transaction.filterIds)}`);
+  } else if (resp.filterValidation) {
+    console.log(`filter ${resp.filterValidation.filterId} accepted=${resp.filterValidation.accepted}`);
+  }
+}
+
+// handle.addFilters([new TransactionFilter().accountInclude(['...']).withId('raydium')]);
+// handle.removeFilters(['pumpfun']);
+// const slots = client.subscribeSlots();  // separate slot lifecycle stream
+```
+
+`getVersion()` / `get_version()` and `ping()` are unary health probes with the same failover as the streams.
 
 ## Pricing & access
 
