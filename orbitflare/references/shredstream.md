@@ -1,6 +1,6 @@
 # OrbitFlare Shredstream
 
-Raw Solana shreds — the smallest unit of block propagation in the Turbine protocol — forwarded to your server via UDP from top-of-turbine validators across 9 global regions. See transactions before they hit any RPC, gRPC, or WebSocket endpoint.
+Raw Solana shreds — the smallest unit of block propagation in the Turbine protocol — forwarded to your server via UDP from top-of-turbine validators across 8 global regions. See transactions before they hit any RPC, gRPC, or WebSocket endpoint.
 
 Source: [docs.orbitflare.com/shredstream](https://docs.orbitflare.com/shredstream)
 
@@ -35,7 +35,7 @@ OrbitFlare's servers sit close to the root of the Turbine tree (high-stake valid
 
 ## Regions
 
-9 total. Premium regions cost more but sit at the highest-density validator hubs.
+8 total. Premium regions cost more but sit at the highest-density validator hubs.
 
 ### Premium — $1,000/month
 
@@ -50,7 +50,6 @@ OrbitFlare's servers sit close to the root of the Turbine tree (high-stake valid
 
 | Region              | Code          |
 | ------------------- | ------------- |
-| Singapore           | `sgp`         |
 | Dublin              | `dub`         |
 | Siauliai (Lithuania)| `siau`        |
 | Salt Lake City      | `slc`         |
@@ -156,7 +155,7 @@ For a more complete starting point, look at the Solana Labs `solana-ledger` crat
 | ------------------- | ----------------- | ----------------- |
 | Starting price      | $500/mo           | $1,000–$6,000/mo  |
 | Protocol            | Raw UDP           | Raw UDP           |
-| Regions             | 9                 | 1–5               |
+| Regions             | 8                 | 1–5               |
 | Free trial          | 60 min self-serve | Sales gated       |
 | NFT Pass free slot  | Yes               | No                |
 | Payment             | Balance / card / SOL+USDC | Varies     |
