@@ -1,6 +1,6 @@
 # OrbitFlare WebSockets
 
-Persistent `wss://` subscriptions for the standard Solana real-time methods (slot, account, logs, signature, program, block, root, vote).
+Persistent `wss://` subscriptions for the standard Solana real-time methods (slot, account, logs, signature, program, root, and block as an add-on).
 
 Source: [docs.orbitflare.com/rpc/websocket](https://docs.orbitflare.com/rpc/websocket) · [docs.orbitflare.com/authentication](https://docs.orbitflare.com/authentication)
 
@@ -20,12 +20,12 @@ ws://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 wss://devnet.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 ```
 
-Same region codes as HTTP RPC (`ash`, `ny`, `la`, `slc`, `ams`, `fra`, `lon`, `dub`, `siau`, `tok`, `sgp`). Same `?api_key=` license key. See `rpc.md` for the full table.
+Same region codes as HTTP RPC (`va`, `ny`, `la`, `slc`, `ams`, `fra`, `lon`, `jp`, `sg`). Same `?api_key=` license key. See `rpc.md` for the full table.
 
 ## Connection limits
 
 - **50 concurrent WebSocket connections per IP**, shared with the gRPC pool. Hitting the cap rejects the new connection with WebSocket close code `1008 Policy Violation` and message `connection limit exceeded`.
-- **60-second idle timeout.** A connection with no traffic in either direction is closed by the server. Send a ping (or any RPC envelope) every ~30 seconds to keep it open.
+- **Idle connections are dropped after several minutes** with close code `1006` and no close frame. Send a WebSocket **ping frame** every 20 to 30 seconds to keep one open. The OrbitFlare SDKs ping every 10 s and resubscribe after reconnecting.
 
 If you need more than 50 concurrent connections from a single IP, you need a Dedicated gRPC Node — see `dedicated-nodes.md`.
 
@@ -40,7 +40,6 @@ If you need more than 50 concurrent connections from a single IP, you need a Ded
 | `programSubscribe`   | Any account owned by the given program changes                                    |
 | `blockSubscribe`     | Full block data (add-on; contact support)                                         |
 | `rootSubscribe`      | Highest confirmed root advances                                                   |
-| `voteSubscribe`      | Raw vote transactions from gossip — high volume, filter aggressively              |
 
 Each has a corresponding `*Unsubscribe` method that takes the subscription ID returned at subscribe time.
 
@@ -155,21 +154,21 @@ ws.on("message", (raw) => {
 });
 ```
 
-Available unsubscribe methods: `accountUnsubscribe`, `logsUnsubscribe`, `slotUnsubscribe`, `signatureUnsubscribe`, `programUnsubscribe`, `blockUnsubscribe`, `rootUnsubscribe`, `voteUnsubscribe`.
+Available unsubscribe methods: `accountUnsubscribe`, `logsUnsubscribe`, `slotUnsubscribe`, `signatureUnsubscribe`, `programUnsubscribe`, `blockUnsubscribe`, `rootUnsubscribe`.
 
 ## Keepalive
 
-The 60-second idle timeout is real. Send a JSON-RPC ping every 30 seconds:
+Idle connections are dropped without a close frame. Send a WebSocket protocol **ping frame** every 20 to 30 seconds:
 
 ```js
-const pingInterval = setInterval(() => {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ jsonrpc: "2.0", id: 0, method: "ping" }));
-  }
-}, 30_000);
+const keepalive = setInterval(() => {
+  if (ws.readyState === WebSocket.OPEN) ws.ping();
+}, 25_000);
 
-ws.on("close", () => clearInterval(pingInterval));
+ws.on("close", () => clearInterval(keepalive));
 ```
+
+A JSON-RPC message such as `{"method": "ping"}` is not a keepalive: Solana has no `ping` method, so the server answers `-32601 Method not found`.
 
 ## Reconnection
 
@@ -249,12 +248,12 @@ All subscriptions on a single client share one underlying WebSocket. Add the `ws
 ## When NOT to use WebSockets
 
 - **Streaming transactions, not just logs.** `logsSubscribe` gives you logs and the signature, not the full transaction. Use Yellowstone (`transactions: {...}` filter) for that.
-- **High-fanout indexing.** A single WebSocket can technically carry many subscriptions but the per-IP cap of 50 connections plus 60s idle timeout makes Yellowstone gRPC a much better fit.
+- **High-fanout indexing.** A single WebSocket can technically carry many subscriptions but the per-IP cap of 50 connections and idle drops make Yellowstone gRPC a much better fit.
 - **Sub-millisecond trading signals.** WebSockets sit downstream of block confirmation. For lowest latency, use Jetstream gRPC or Shredstream.
 
 ## Common pitfalls
 
-- Connection closes after exactly 60 seconds → you forgot keepalive. Send a `ping` every 30s.
+- Connection closes with code `1006` after sitting idle → you forgot keepalive. Send a WebSocket ping frame every 20 to 30 s.
 - Close code `1008` → you've hit the per-IP 50-connection cap. Close idle connections or move to a Dedicated gRPC Node.
 - Stale subscription after reconnect → re-subscribe in the `open` handler, every time.
-- Subscribed to `voteSubscribe` and got firehosed → vote transactions are very high volume. Filter or just don't.
+- `voteSubscribe` returns `-32601 Method not found` → it no longer exists. Since Alpenglow, validators vote off-chain, so there are no vote transactions to subscribe to.
