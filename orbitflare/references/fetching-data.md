@@ -34,7 +34,7 @@ params:  [address, options?]
 | `paginationToken`              | string    | —             | Cursor `"slot:txIndex"` from the previous response            |
 | `commitment`                   | string    | `finalized`   | `finalized` or `confirmed` only — **`processed` is rejected** |
 | `encoding`                     | string    | `json`        | `json` / `jsonParsed` / `base64` / `base58` (only in `full`)  |
-| `maxSupportedTransactionVersion` | number  | `0` in `full` | Set to handle versioned txs                                   |
+| `maxSupportedTransactionVersion` | number  | none          | Set to `1` in `full` and `accounts` modes. Without it, v1 transactions are silently left out |
 | `minContextSlot`               | number    | —             | Reject if the node is behind this slot                        |
 | `filters.tokenAccounts`        | string    | `none`        | `none` / `balanceChanged` / `all`                             |
 | `filters.blockTime`            | object    | —             | `{ gte, gt, lte, lt, eq }` Unix seconds                       |
@@ -320,7 +320,7 @@ curl -X POST "http://fra.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY" \
     "method": "getBlock",
     "params": [
       100000000,
-      { "encoding": "json", "transactionDetails": "full", "rewards": false, "maxSupportedTransactionVersion": 0 }
+      { "encoding": "json", "transactionDetails": "full", "rewards": false, "maxSupportedTransactionVersion": 1 }
     ]
   }'
 ```
@@ -331,7 +331,7 @@ Block timestamp:
 curl ... -d '{ "jsonrpc": "2.0", "id": 1, "method": "getBlockTime", "params": [100000000] }'
 ```
 
-Always pass `maxSupportedTransactionVersion: 0` so versioned transactions don't throw.
+Always pass `maxSupportedTransactionVersion: 1`. About half of mainnet transactions are Transaction v1, and with `0` the request fails with `-32015`.
 
 ## Managed backfills
 
