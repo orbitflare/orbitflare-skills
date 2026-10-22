@@ -15,7 +15,7 @@ You can sign up with email or by linking a Solana wallet (which lets you authent
 | Plan       | RPS   | TPS   | gRPC                     | Monthly | Best for                                         |
 | ---------- | ----- | ----- | ------------------------ | ------- | ------------------------------------------------ |
 | Free       | 10    | 1     | Devnet only              | $0      | Prototyping                                      |
-| Developer  | 50    | 10    | Devnet only              | $99     | Side projects, low-volume tools                  |
+| Developer  | 50    | 10    | Devnet only              | $49     | Side projects, low-volume tools                  |
 | Growth     | 200   | 75    | Add-on (+$500)           | $399    | Growing apps                                     |
 | Scale ⭐   | 400   | 150   | Add-on (+$500)           | $799    | Production apps with traffic                     |
 | Pro        | 600   | 200   | Included                 | $999    | High-throughput services + streaming             |
@@ -29,23 +29,25 @@ Add-ons:
 
 - **Shared gRPC** — $500/mo, includes Jetstream + Yellowstone, 1 IP. Required if your plan doesn't include gRPC.
 - **Shredstream** — $500/mo (standard regions) or $1,000/mo (premium regions). Per region.
-- **OrbitFlare Pass** — limited NFT pass with VIP support, gRPC included, free Shredstream slot. Only 95 ever minted; resold on Magic Eden / Tensor.
+- **OrbitFlare Pass** — limited NFT pass with VIP support, gRPC included, free Shredstream slot. Only 95 ever minted; resold on Magic Eden / Tensor. Access is a monthly fee on top of buying the NFT: Pro, Elite, and Mega tiers from $500/mo, up to 1,500 RPS / 300 TPS.
 
 ## 3. Get your keys
 
-OrbitFlare has **two different keys**. Don't mix them up.
+OrbitFlare has **two account keys**, plus a separate Apex key. Don't mix them up.
 
 | Key                  | Format                            | Used for                                                       | Auth method                       |
 | -------------------- | --------------------------------- | -------------------------------------------------------------- | --------------------------------- |
-| **RPC license key**  | `ORBIT-XXXXXX-NNNNNN-NNNNNN`      | HTTP RPC, WebSockets, gRPC, Jetstream, Shredstream, BNB        | `?api_key=...` query parameter    |
-| **Customer API key** | (opaque string)                   | `https://api.orbitflare.com/customer/v2/...`                   | `X-ORBIT-KEY: ...` HTTP header    |
+| **RPC license key**  | `ORBIT-XXXXXX-NNNNNN-NNNNNN`      | HTTP RPC, WebSockets, gRPC, Jetstream, BNB                     | `?api_key=` or `x-api-key` on RPC/WS; `x-token` on gRPC |
+| **Customer API key** | (opaque string)                   | `https://orbitflare.com/api/customer/v2/...`                   | `X-ORBIT-KEY: ...` HTTP header    |
+| **Apex API key**     | —                                 | Apex transaction landing (`*.apex.orbitflare.com`)             | `x-api-key: ...` header (QUIC: derived cert) |
 
-Both live in the [dashboard](https://orbitflare.com/dashboard):
+All three live in the [dashboard](https://orbitflare.com/dashboard):
 
-- License key → "Licenses" tab. Each license has its own key, IP whitelist, plan, and renewal settings.
+- License key → "Licenses" tab. Each license has its own key, authentication mode (IP Whitelist or API Key Only), IP whitelist, regions, plan, and renewal settings.
 - Customer API key → "API Keys" tab. The full key is shown **once**, on create or regenerate. Store it securely.
+- Apex API key → **Dashboard > Apex**. Each key has a tier (tip floor and rate limit). See `apex.md`.
 
-For production, **enable IP whitelisting on both** so a leaked key alone is useless from elsewhere.
+For servers with fixed IPs, use **IP Whitelist** mode on the license and whitelist the Customer API key too, so a leaked key alone is useless from elsewhere. If your IPs change (serverless, CI, laptops), switch the license to **API Key Only** and keep the key secret. In API Key Only mode, gRPC clients must send the key as `x-token`; see `SKILL.md`.
 
 ## 4. Make your first call
 
@@ -101,6 +103,7 @@ export ORBITFLARE_RPC_URL=http://fra.rpc.orbitflare.com
 export ORBITFLARE_WS_URL=ws://fra.rpc.orbitflare.com
 export ORBITFLARE_GRPC_URL=http://fra.rpc.orbitflare.com:10000
 export ORBITFLARE_JETSTREAM_URL=http://fra.jetstream.orbitflare.com
+export ORBITFLARE_APEX_API_KEY=YOUR_APEX_API_KEY   # Apex key, read by @orbitflare/sdk's ApexClient
 ```
 
 Once these are set, you don't need to pass URLs or keys to `RpcClientBuilder::new().build()?` or to `orbitflare` commands — they pick them up automatically.

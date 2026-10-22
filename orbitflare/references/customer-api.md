@@ -18,10 +18,10 @@ Always use **v2** for new integrations. Migration guide: [docs.orbitflare.com/ap
 ## Base URL
 
 ```
-https://api.orbitflare.com/customer/v2
+https://orbitflare.com/api/customer/v2
 ```
 
-(The OpenAPI spec lists `https://orbitflare.com/api/customer/v2` as the production server. Both routes resolve to the same backend.)
+This is the production server in the OpenAPI spec. `api.orbitflare.com/customer/v2` does not serve the API (it returns 404).
 
 ## Authentication
 
@@ -31,7 +31,7 @@ Pass the **Customer API key** in the `X-ORBIT-KEY` header:
 
 ```bash
 curl -H "X-ORBIT-KEY: YOUR_API_KEY" \
-  https://api.orbitflare.com/customer/v2/licenses
+  https://orbitflare.com/api/customer/v2/licenses
 ```
 
 This is **not** the same key you use for RPC. The RPC license key (`?api_key=ORBIT-...`) is separate. Find your Customer API key under API Keys in the [dashboard](https://orbitflare.com/dashboard).
@@ -42,7 +42,7 @@ Tokens are issued by either the **device authorization flow** or **wallet signat
 
 ```bash
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-  https://api.orbitflare.com/customer/v2/me
+  https://orbitflare.com/api/customer/v2/me
 ```
 
 API key sessions cannot be revoked via `/auth/logout`; only Bearer tokens can.
@@ -66,7 +66,7 @@ API key sessions cannot be revoked via `/auth/logout`; only Bearer tokens can.
 
 ```bash
 # 1. Request a device code
-curl -X POST https://api.orbitflare.com/customer/v2/auth/device/code
+curl -X POST https://orbitflare.com/api/customer/v2/auth/device/code
 
 # Response:
 # {
@@ -79,7 +79,7 @@ curl -X POST https://api.orbitflare.com/customer/v2/auth/device/code
 
 # 2. Show verification_uri + user_code to the user.
 # 3. Poll for the token:
-curl -X POST https://api.orbitflare.com/customer/v2/auth/device/token \
+curl -X POST https://orbitflare.com/api/customer/v2/auth/device/token \
   -H "Content-Type: application/json" \
   -d '{ "device_code": "..." }'
 
@@ -93,18 +93,18 @@ curl -X POST https://api.orbitflare.com/customer/v2/auth/device/token \
 
 ```bash
 # 1. Request a challenge
-curl -X POST https://api.orbitflare.com/customer/v2/auth/wallet/challenge \
+curl -X POST https://orbitflare.com/api/customer/v2/auth/wallet/challenge \
   -H "Content-Type: application/json" \
   -d '{ "wallet": "YourSolanaPublicKey" }'
 
 # 2. Sign the returned challenge nonce with Ed25519.
 
 # 3. Verify (existing accounts) or Register (first time):
-curl -X POST https://api.orbitflare.com/customer/v2/auth/wallet/verify \
+curl -X POST https://orbitflare.com/api/customer/v2/auth/wallet/verify \
   -H "Content-Type: application/json" \
   -d '{ "wallet": "...", "signature": "base58-signed-challenge" }'
 
-curl -X POST https://api.orbitflare.com/customer/v2/auth/wallet/register \
+curl -X POST https://orbitflare.com/api/customer/v2/auth/wallet/register \
   -H "Content-Type: application/json" \
   -d '{ "wallet": "...", "signature": "..." }'
 ```
@@ -117,24 +117,24 @@ A **license** is what you authenticate RPC traffic with. You can have many licen
 
 ```bash
 # List
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/licenses
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/licenses
 
 # Detail
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/licenses/{license_id}
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/licenses/{license_id}
 
 # Add an IP to mainnet whitelist
 curl -X POST -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/licenses/{license_id}/ips \
+  https://orbitflare.com/api/customer/v2/licenses/{license_id}/ips \
   -d '{ "ip": "1.2.3.4", "location": "fra" }'
 
 # Toggle auth mode (IP whitelist vs API key)
 curl -X PATCH -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/licenses/{license_id}/auth-mode \
+  https://orbitflare.com/api/customer/v2/licenses/{license_id}/auth-mode \
   -d '{ "mode": "api_key" }'
 
 # Regenerate the RPC license key
 curl -X POST -H "X-ORBIT-KEY: $KEY" \
-  https://api.orbitflare.com/customer/v2/licenses/{license_id}/regenerate
+  https://orbitflare.com/api/customer/v2/licenses/{license_id}/regenerate
 ```
 
 Other useful operations: `add-domain`, `remove-domain`, `add-devnet-domain`, `regenerate-key`, `reset-key`, `toggle-auto-renewal`. See the OpenAPI spec for exact paths.
@@ -146,17 +146,17 @@ The `X-ORBIT-KEY` keys themselves can be created, listed, regenerated, and delet
 ```bash
 # Create
 curl -X POST -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/api-keys \
+  https://orbitflare.com/api/customer/v2/api-keys \
   -d '{ "name": "ci-pipeline" }'
 
 # Add IP whitelist to a key
 curl -X POST -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/api-keys/{api_key_id}/ips \
+  https://orbitflare.com/api/customer/v2/api-keys/{api_key_id}/ips \
   -d '{ "ip": "1.2.3.4" }'
 
 # Regenerate
 curl -X POST -H "X-ORBIT-KEY: $KEY" \
-  https://api.orbitflare.com/customer/v2/api-keys/{api_key_id}/regenerate
+  https://orbitflare.com/api/customer/v2/api-keys/{api_key_id}/regenerate
 ```
 
 The full API key value is returned **once**, on create or regenerate. After that only a masked version is visible. Store it securely.
@@ -215,19 +215,19 @@ Don't try to bypass `prepare` and craft the transaction yourself — `confirm` v
 
 ```bash
 # List the RPC plan catalog
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/rpc-plans
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/rpc-plans
 
 # Plan details
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/rpc-plans/{slug}
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/rpc-plans/{slug}
 
 # Validate (dry-run): pricing + can-you-afford check
 curl -X POST -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/orders/validate \
+  https://orbitflare.com/api/customer/v2/orders/validate \
   -d '{ "plan": "growth", "period": "monthly", "coupon": "OPTIONAL" }'
 
 # Purchase from balance (atomic: deducts balance, creates order + invoice + payment + license)
 curl -X POST -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/orders \
+  https://orbitflare.com/api/customer/v2/orders \
   -d '{ "plan": "growth", "period": "monthly" }'
 ```
 
@@ -237,29 +237,29 @@ Always run `validate` first to surface pricing and confirm balance.
 
 ```bash
 # List
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/invoices
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/invoices
 
 # Get
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/invoices/{ref}
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/invoices/{ref}
 
 # Pay with balance (supports partial payment)
 curl -X POST -H "X-ORBIT-KEY: $KEY" \
-  https://api.orbitflare.com/customer/v2/invoices/{ref}/pay-with-balance
+  https://orbitflare.com/api/customer/v2/invoices/{ref}/pay-with-balance
 ```
 
 ## Profile
 
 ```bash
 # Read
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/profile
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/profile
 
 # Update
 curl -X PATCH -H "X-ORBIT-KEY: $KEY" -H "Content-Type: application/json" \
-  https://api.orbitflare.com/customer/v2/profile \
+  https://orbitflare.com/api/customer/v2/profile \
   -d '{ "name": "...", "payment_wallet": "..." }'
 
 # Balance
-curl -H "X-ORBIT-KEY: $KEY" https://api.orbitflare.com/customer/v2/profile/balance
+curl -H "X-ORBIT-KEY: $KEY" https://orbitflare.com/api/customer/v2/profile/balance
 ```
 
 ## Error shape (v2)
