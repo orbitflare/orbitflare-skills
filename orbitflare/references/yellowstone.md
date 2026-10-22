@@ -9,7 +9,7 @@ Source: [docs.orbitflare.com/data-streaming/yellowstone](https://docs.orbitflare
 - Indexing pipelines that need full transaction metadata (inner ix, balance deltas, logs).
 - Analytics, dashboards, and explorers that need slot/block context plus transactions.
 - Anything that needs runtime control over `commitment` (`processed` / `confirmed` / `finalized`).
-- Anything that needs `vote: false` / `failed: false` filtering, signature filters, or account-data slicing.
+- Anything that needs `failed: false` filtering, signature filters, or account-data slicing.
 
 If you need **lowest latency** and don't need metadata or slot/block streams, use **Jetstream** instead (`jetstream.md`). If you need data before any block exists, use **Shredstream** (`shredstream.md`).
 
@@ -19,7 +19,7 @@ If you need **lowest latency** and don't need metadata or slot/block streams, us
 http://{region}.rpc.orbitflare.com:10000
 ```
 
-Region codes match HTTP RPC (`ash`, `ny`, `la`, `slc`, `ams`, `fra`, `lon`, `dub`, `siau`, `tok`, `sgp`). The token is sent on the gRPC metadata, not the URL — pass it as the `x-token` argument when constructing the client.
+Region codes match HTTP RPC (`va`, `ny`, `la`, `slc`, `ams`, `fra`, `lon`, `jp`, `sg`). In **API Key Only** mode, send the license key as `x-token` gRPC metadata (not on the URL); the SDKs do it from `ORBITFLARE_LICENSE_KEY` or `.api_key()`. In **IP Whitelist** mode only the IP matters and no key is needed. Errors: `Unauthenticated: authentication required: provide x-token header` (no key in API Key Only mode, or a non-whitelisted IP in IP Whitelist mode) and `PermissionDenied: IP not whitelisted for this api key` (region not on your license, or a valid key from a non-whitelisted IP in IP Whitelist mode).
 
 Available with the **Shared gRPC** plan ($500/mo), the **Pro** plan ($999/mo), the **OrbitFlare Pass**, or a **Dedicated gRPC Node** (from $1,800/mo).
 
@@ -73,7 +73,7 @@ You can `write()` a new full request to the same stream at any time to *replace*
 
 | Field             | Type        | Effect                                                                            |
 | ----------------- | ----------- | --------------------------------------------------------------------------------- |
-| `vote`            | `bool?`     | Include or exclude vote transactions. Default: include all.                       |
+| `vote`            | `bool?`     | Include or exclude vote transactions. Since Alpenglow there are none on chain, so it has no effect. |
 | `failed`          | `bool?`     | Include or exclude failed transactions. Default: include all.                     |
 | `signature`       | `string?`   | Watch a single signature.                                                         |
 | `accountInclude`  | `string[]`  | Match if the tx touches any of these accounts (OR).                               |

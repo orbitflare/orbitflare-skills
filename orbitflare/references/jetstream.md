@@ -37,9 +37,9 @@ Both share the same 50 concurrent connections per IP cap.
 http://{region}.jetstream.orbitflare.com
 ```
 
-Region codes: `ny`, `slc` (US); `fra`, `ams`, `lon`, `dub`, `siau` (EU); `jp`, `sgp` (APAC). Pick the region closest to the validators you care about (Frankfurt and New York are usually fastest for mainstream programs).
+Region codes: `ny`, `slc` (US); `fra`, `ams`, `lon`, `dub`, `sqq` (EU); `jp`, `sgp` (APAC). Pick the region closest to the validators you care about (Frankfurt and New York are usually fastest for mainstream programs).
 
-Authentication is via metadata on the gRPC channel — the orbitflare-sdk handles it from `ORBITFLARE_LICENSE_KEY`.
+Authentication depends on the license's mode. In **IP Whitelist** mode the connection must come from a whitelisted IP and needs no key. In **API Key Only** mode send the license key as `x-token` gRPC metadata; the SDKs do it from `ORBITFLARE_LICENSE_KEY` or `.api_key()` (Rust ≥ 0.4.1, TypeScript ≥ 0.5.1, Go ≥ v0.2.1). A refused connection shows up as `Unavailable: EOF` or `connection reset by peer`, with no gRPC status: check the mode, the key, and that the region is on your license.
 
 ## Connection limits
 
@@ -59,7 +59,7 @@ Jetstream filters on **transactions**. Filters are a map of named filters; a tra
 | `account_exclude`  | Drop transactions that touch any of these addresses.                                                |
 | `account_required` | Only match if **every** listed address appears in the transaction (logical AND).                    |
 
-There is **no** `vote`, `failed`, `signature`, `slots`, `blocks`, or `commitment` field on Jetstream. Those are Yellowstone-only. Vote transactions are already excluded server-side, so you never receive them.
+There is **no** `vote`, `failed`, `signature`, `slots`, `blocks`, or `commitment` field on Jetstream. Those are Yellowstone-only. There are no vote transactions to exclude anyway: since Alpenglow, validators vote off-chain.
 
 ## Quick start (CLI)
 
@@ -304,4 +304,5 @@ for await (const resp of stream) {
 - **Picked Jetstream when you needed Yellowstone.** Jetstream events have no `meta` field, no inner instructions, no slot/block context beyond `tx.slot`. If you find yourself reaching for fields that aren't there, switch streams.
 - **Stream silently dies after 10 minutes.** Cloudflare killed the idle stream. Add a ping interval ≤ 30s.
 - **`RESOURCE_EXHAUSTED`** on connect. You hit the 50-connection cap across all gRPC + WebSocket. Close orphans or upgrade to a dedicated gRPC node.
-- **Trying to filter by `vote: false`.** That's a Yellowstone field. On Jetstream, exclude votes by adding the vote program to `account_exclude` or filter downstream.
+- **Trying to filter by `vote: false`.** That's a Yellowstone field, and since Alpenglow there are no vote transactions on chain, so there is nothing to exclude.
+- **`Unavailable: EOF` right after connecting.** Jetstream refused the connection: in API Key Only mode no valid `x-token` was sent, in IP Whitelist mode the IP isn't whitelisted, or the region isn't on your license.
