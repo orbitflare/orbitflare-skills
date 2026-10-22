@@ -23,17 +23,15 @@ http://{region}.rpc.orbitflare.com?api_key=YOUR_LICENSE_KEY
 
 | Continent | Region code | City                       |
 | --------- | ----------- | -------------------------- |
-| US        | `ash`       | Ashburn, Virginia          |
+| US        | `va`        | Ashburn, Virginia          |
 | US        | `ny`        | New York                   |
 | US        | `la`        | Los Angeles                |
 | US        | `slc`       | Salt Lake City, Utah       |
 | EU        | `ams`       | Amsterdam                  |
 | EU        | `fra`       | Frankfurt                  |
 | EU        | `lon`       | London                     |
-| EU        | `dub`       | Dublin                     |
-| EU        | `siau`      | Siauliai, Lithuania        |
-| APAC      | `tok`       | Tokyo                      |
-| APAC      | `sgp`       | Singapore                  |
+| APAC      | `jp`        | Tokyo                      |
+| APAC      | `sg`        | Singapore                  |
 
 Devnet:
 
@@ -50,9 +48,9 @@ GET http://{region}.rpc.orbitflare.com/health?api_key=YOUR_LICENSE_KEY
 
 ## Authentication
 
-Pass your **license key** as the `?api_key=` query parameter. This is *not* the same as the `X-ORBIT-KEY` Customer API key — see `customer-api.md`. License keys look like `ORBIT-XXXXXX-NNNNNN-NNNNNN` and live in the Licenses tab of the [dashboard](https://orbitflare.com/dashboard).
+Pass your **license key** as the `?api_key=` query parameter or an `x-api-key` header. This is *not* the same as the `X-ORBIT-KEY` Customer API key — see `customer-api.md`. License keys look like `ORBIT-XXXXXX-NNNNNN-NNNNNN` and live in the Licenses tab of the [dashboard](https://orbitflare.com/dashboard).
 
-Optional hardening: enable IP whitelisting on the license so a leaked URL is not enough to use the key.
+In **IP Whitelist** mode the request must also come from a whitelisted IP; in **API Key Only** mode the key works from any IP. A region outside your license returns `-32404 IP not whitelisted` either way.
 
 ## Rate limits
 
@@ -176,7 +174,7 @@ Full method list: [docs.orbitflare.com/llms.txt](https://docs.orbitflare.com/llm
 
 ## Sending transactions
 
-1. Build the transaction (versioned tx with `maxSupportedTransactionVersion: 0`).
+1. Build the transaction (a v0 or v1 versioned transaction; read it back with `maxSupportedTransactionVersion: 1`).
 2. Add `ComputeBudgetProgram.setComputeUnitLimit(...)` and `setComputeUnitPrice(...)` instructions. Pick the unit price from a recent call to `getRecentPrioritizationFees` for the writable accounts.
 3. `simulateTransaction` to surface logs / errors before paying for landing.
 4. `sendTransaction` with `skipPreflight: false` (let the RPC reject obviously bad txs) unless you've already simulated locally and need every microsecond.
@@ -185,12 +183,14 @@ Full method list: [docs.orbitflare.com/llms.txt](https://docs.orbitflare.com/llm
 
 For DEX swaps, use the **Metis Swap API** which handles fee selection, dynamic compute units, and dynamic slippage for you. See `trading-apis.md`.
 
+When landing speed matters, send step 4 through **Apex** instead (SWQoS + Jito + direct TPU in one send, tip paid only on landing) and keep the RPC for steps 1–3 and 5. See `apex.md`.
+
 ## HTTP error codes
 
 | Code | Meaning              | What to do                                                                  |
 | ---- | -------------------- | --------------------------------------------------------------------------- |
-| 401  | Unauthorized         | License key wrong / missing. Check `?api_key=` and IP whitelist.            |
-| 403  | Forbidden            | Plan does not allow this method or your IP is not whitelisted.              |
+| 401  | Unauthorized         | `-32401 missing API key`: no key was sent. Add `?api_key=` or `x-api-key`.  |
+| 403  | Forbidden            | `-32402 invalid API key`, or `-32404 IP not whitelisted`: IP not on the whitelist (IP Whitelist mode) or region not on your license. |
 | 429  | Too Many Requests    | RPS / TPS exceeded. Exponential backoff.                                    |
 | 500  | Internal Server      | Transient. Retry once.                                                      |
 | 502  | Bad Gateway          | Upstream issue. Retry; check status page.                                   |
@@ -213,9 +213,9 @@ For DEX swaps, use the **Metis Swap API** which handles fee selection, dynamic c
 
 ## Best practices
 
-- Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East, `tok` for APAC).
+- Pick the region closest to the client (e.g. `fra` for EU, `ny` for US East, `jp` or `sg` for APAC).
 - Configure fallback regions in the SDK (`.fallback_url(...)`) for HA.
-- Set `maxSupportedTransactionVersion: 0` on every `getBlock` / `getTransaction` to handle versioned txs.
+- Set `maxSupportedTransactionVersion: 1` on every `getBlock` / `getTransaction`. With `0`, any block or transaction containing a Transaction v1 fails with `-32015`.
 - Use `getMultipleAccounts` (max 100 per call) instead of looping `getAccountInfo`.
 - Cache immutable data (finalized blocks, finalized transactions) locally — it never changes.
 - Treat the license key as a secret. Don't ship it in browser bundles.
