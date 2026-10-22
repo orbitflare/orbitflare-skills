@@ -134,14 +134,16 @@ Next steps:
 
   3. Set environment variables your code can pick up:
        export ORBITFLARE_LICENSE_KEY=ORBIT-XXXXXX-NNNNNN-NNNNNN
-       export ORBITFLARE_RPC_URL=http://mainnet.rpc.orbitflare.com
-       export ORBITFLARE_WS_URL=ws://mainnet.rpc.orbitflare.com
+       export ORBITFLARE_RPC_URL=http://fra.rpc.orbitflare.com
+       export ORBITFLARE_WS_URL=ws://fra.rpc.orbitflare.com
        export ORBITFLARE_GRPC_URL=http://fra.rpc.orbitflare.com:10000
        export ORBITFLARE_JETSTREAM_URL=http://fra.jetstream.orbitflare.com
+       export ORBITFLARE_APEX_API_KEY=YOUR_APEX_API_KEY
 
   4. Try a prompt:
        "Stream pump.fun trades using OrbitFlare Jetstream and print each signature"
        "Build a wallet history view with getTransactionsForAddress"
+       "Send a tipped transaction through OrbitFlare Apex and confirm it"
        "Quote and execute a 1 SOL -> USDC swap with Metis"
 
 Docs: https://docs.orbitflare.com

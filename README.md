@@ -1,10 +1,10 @@
 # OrbitFlare Skills
 
-Agent skills for building on [OrbitFlare](https://orbitflare.com): Solana RPC, gRPC streaming, Shredstream, dedicated nodes, and trading APIs.
+Agent skills for building on [OrbitFlare](https://orbitflare.com): Solana RPC, Apex transaction landing, gRPC streaming, Shredstream, dedicated nodes, and trading APIs.
 
 ## Skills
 
-- [`orbitflare/`](./orbitflare): main skill covering HTTP RPC, WebSockets, Jetstream, Yellowstone, Shredstream, Dedicated Nodes (Solana + BNB), `getTransactionsForAddress`, historical archive, Metis Swap, Jito Bundle Simulation, the Customer API, the OrbitFlare CLI, and the Rust SDK.
+- [`orbitflare/`](./orbitflare): main skill covering HTTP RPC, WebSockets, Apex transaction landing, Jetstream, Yellowstone, Shredstream, Dedicated Nodes (Solana + BNB), `getTransactionsForAddress`, historical archive, Metis Swap, Jito Bundle Simulation, the Customer API, the OrbitFlare CLI, and the Rust SDK.
 
 ## Install
 

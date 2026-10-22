@@ -17,6 +17,7 @@
     "ai",
     "agent",
     "rpc",
+    "apex",
     "jetstream",
     "yellowstone",
     "shredstream"
