@@ -1,6 +1,6 @@
 {
   "name": "@orbitflare/skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OrbitFlare agent skills installer. Drops the OrbitFlare skill into Claude Code, Cursor, or Codex skill folders so coding agents write OrbitFlare code correctly.",
   "type": "module",
   "bin": {
