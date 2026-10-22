@@ -95,12 +95,28 @@ orbitflare rpc priority-fees --account ADDRESS
 orbitflare rpc raw '{"jsonrpc":"2.0","id":1,"method":"getSlot","params":[]}'
 ```
 
+`rpc history` uses `getTransactionsForAddress` (`--oldest-first`, `--status`, `--since`/`--until`, `--token-accounts`, `--page-token`). Add `--region fra` (or set `region` in config) to pick endpoints by region instead of full URLs.
+
+### DAS and Apex commands
+
+```bash
+orbitflare das asset ASSET_ID              # one or many assets
+orbitflare das owner YOUR_WALLET           # SOL, priced tokens and NFTs
+orbitflare das search --owner YOUR_WALLET
+orbitflare das holders MINT
+orbitflare das proof ASSET_ID              # compressed NFT proof
+orbitflare apex ping                       # latency to every Apex region
+orbitflare apex tip-accounts
+orbitflare auth set-apex-key YOUR_APEX_KEY
+```
+
 ### Streaming commands
 
 YAML-config-driven gRPC and Jetstream subscriptions with automatic reconnection and endpoint failover. YAML supports `${ENV_VAR}` expansion.
 
 ```bash
-orbitflare jet  --config jetstream.yml      # Jetstream
+orbitflare jet  --config jetstream.yml      # Jetstream (v2 by default; --v1 for the old protocol)
+orbitflare jet  --include PROGRAM_ID --enrichment --duration 30 --json
 orbitflare grpc --config grpc.yml           # Yellowstone
 ```
 
@@ -241,10 +257,10 @@ Different services use different schemes. Don't mix them:
 | ---------------- | --------------------------------------------- | ------------------------------------------------ |
 | RPC              | `http://{region}.rpc.orbitflare.com`          | SDK appends `?api_key=` from `.api_key()` / env  |
 | WebSocket        | `ws://{region}.rpc.orbitflare.com`            | SDK appends `?api_key=` from `.api_key()` / env  |
-| Yellowstone gRPC | `http://{region}.rpc.orbitflare.com:10000`    | None at the SDK layer (server-side IP allowlist) |
-| Jetstream        | `http://{region}.jetstream.orbitflare.com`    | None at the SDK layer (server-side IP allowlist) |
+| Yellowstone gRPC | `http://{region}.rpc.orbitflare.com:10000`    | SDK sends `x-token` from `.api_key()` / env      |
+| Jetstream        | `http://{region}.jetstream.orbitflare.com`    | SDK sends `x-token` from `.api_key()` / env      |
 
-OrbitFlare regional endpoints are plain `http://` and `ws://` (not TLS); gRPC negotiates HTTP/2 over TCP. The gRPC and Jetstream builders never touch `ORBITFLARE_LICENSE_KEY` or `?api_key=`. If you put an api_key on a gRPC URL the SDK will not strip it, but the server will not use it either.
+OrbitFlare regional endpoints are plain `http://` and `ws://` (not TLS); gRPC negotiates HTTP/2 over TCP. Since Rust 0.4.1, TypeScript 0.5.1 and Go v0.2.1, the Yellowstone and Jetstream builders take `.api_key()` (`.apiKey()` / `.APIKey()`) and fall back to `ORBITFLARE_LICENSE_KEY`, sending it as `x-token` metadata. That is required for licenses in API Key Only mode; in IP Whitelist mode the key is ignored and the IP decides. An `?api_key=` on a gRPC URL is never used.
 
 ### RPC client
 
